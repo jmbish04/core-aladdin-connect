@@ -1,17 +1,19 @@
 {
   "compilerOptions": {
-    "target": "es2023",
-    "module": "commonjs",
-    "lib": ["es2023"],
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "strict": true,
     "esModuleInterop": true,
-    "noImplicitAny": false
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "types": [
+      "@cloudflare/workers-types",
+      "node"
+    ]
   },
-  "include": ["src/"],
-  "exclude": ["**/*.spec.ts"]
+  "include": [
+    "src"
+  ]
 }
