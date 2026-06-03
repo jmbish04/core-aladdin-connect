@@ -1,89 +1,19 @@
 {
-  "name": "core-aladdin-connect",
-  "main": "dist/_worker.js/index.js",
-  "compatibility_date": "2026-03-09",
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "colby-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-07",
   "compatibility_flags": ["nodejs_compat"],
-  "upload_source_maps": true,
-  "workers_dev": true,
-  "preview_urls": true,
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1,
-    "logs": {
-      "enabled": true,
-      "head_sampling_rate": 1,
-      "persist": true,
-      "invocation_logs": true,
-    },
-    "traces": {
-      "enabled": true,
-      "persist": true,
-      "head_sampling_rate": 1,
-    },
-  },
-  "assets": {
-    "binding": "ASSETS",
-    "directory": "./dist",
-    "run_worker_first": true,
-    "not_found_handling": "none",
-  },
-  "ai": {
-    "binding": "AI",
-    "remote": true,
-  },
-  "browser": {
-    "binding": "BROWSER",
+    "head_sampling_rate": 1
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "core-aladdin-connec",
       "database_id": "f6a940a7-6766-4f73-a836-6a72bb828048",
-      "migrations_dir": "drizzle",
-      "remote": true,
-    },
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "c18b9fcd03d540328a9a949d3ee37cd6",
-      "remote": true,
-    },
-    {
-      "binding": "SESSIONS",
-      "id": "50d6735050814476bf58c67e544f8e2a",
-      "remote": true,
-    },
-    // OAuth provider token storage. Aliased to the existing KV namespace;
-    // OAuth keys are namespaced under prefixes (e.g. `client:`, `token:`,
-    // `grant:`) so they don't collide with other KV usage.
-    {
-      "binding": "OAUTH_KV",
-      "id": "40090557ec9e4f63bd839e862b28a825",
-      "remote": true,
-    },
-  ],
-  "secrets": {
-    "required": [
-      "ALADDIN_USERNAME",
-      "ALADDIN_PASSWORD",
-    ],
-  },
-  "secrets_store_secrets": [
-   {
-      "binding": "CLOUDFLARE_ACCOUNT_ID",
-      "store_id": "8c42fa70938644e0a8a109744467375f",
-      "secret_name": "CLOUDFLARE_ACCOUNT_ID",
-    },
-    {
-      "binding": "CLOUDFLARE_WRANGLER_API_TOKEN",
-      "store_id": "8c42fa70938644e0a8a109744467375f",
-      "secret_name": "CLOUDFLARE_WRANGLER_API_TOKEN",
-    },
-    {
-      "binding": "WORKER_API_KEY",
-      "store_id": "8c42fa70938644e0a8a109744467375f",
-      "secret_name": "WORKER_API_KEY",
-    },
-  ],
+      "migrations_dir": "./drizzle"
+    }
+  ]
 }
