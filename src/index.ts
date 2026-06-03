@@ -1,203 +1,35 @@
-import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
-import type { Context, Next } from 'hono';
-import { z } from 'zod';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { swaggerUI } from '@hono/swagger-ui';
 import { apiReference } from '@scalar/hono-api-reference';
+import { drizzle } from 'drizzle-orm/d1';
+import { users } from './db/schema';
 
-export interface Env {
-  DB: any;
-  WORKER_API_KEY: {
-    get: () => Promise<string>;
-  };
-}
-
+// NOTE: We do not redefine `interface Env` or import it.
+// `Env` is automatically sourced from the globally generated `worker-configuration.d.ts`
 const app = new OpenAPIHono<{ Bindings: Env }>();
 
-// 1. D1 Logging Middleware
-app.use('*', async (c, next) => {
-  await next();
-  const statusCode = c.res.status;
-  const endpoint = c.req.path;
-  const timestamp = new Date().toISOString();
-
-  // Execute logging asynchronously
-  c.executionCtx.waitUntil(
-    c.env.DB.prepare(
-      'INSERT INTO request_logs (endpoint, timestamp, status_code) VALUES (?1, ?2, ?3)'
-    )
-      .bind(endpoint, timestamp, statusCode)
-      .run()
-  );
-});
-
-// 2. Strict Security Authentication Middleware
-const authMiddleware = async (c: Context<{ Bindings: Env }>, next: Next) => {
-  const authHeader = c.req.header('Authorization');
-  const targetSecret = await c.env.WORKER_API_KEY.get();
-
-  if (!authHeader || authHeader !== `Bearer ${targetSecret}`) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-  await next();
-};
-
-app.use('/api/*', authMiddleware);
-app.use('/mcp', authMiddleware);
-
-// 3. Dynamic On-Demand API Documentation
 app.doc('/openapi.json', {
   openapi: '3.1.0',
   info: {
-    title: 'Aladdin Connect API Worker',
+    title: 'Colby Application API',
     version: '1.0.0',
   },
 });
 
 app.get('/swagger', swaggerUI({ url: '/openapi.json' }));
+app.get('/scalar', apiReference({ spec: { url: '/openapi.json' } }));
 
-app.get(
-  '/scalar',
-  apiReference({
-    spec: {
-      url: '/openapi.json',
-    },
-  })
-);
+app.get('/api/health', async (c) => {
+  const db = drizzle(c.env.DB);
 
-// Internal Aladdin Connect Client maintaining AWS API Gateway config mapping
-class AladdinConnectClient {
-  private static readonly API_HOST = 'pxdqkls7aj.execute-api.us-east-1.amazonaws.com';
+  // Verify D1 binding and query execution
+  const dbCheck = await db.select().from(users).limit(1);
 
-  static async initiateAuth(username: string, passwordHash: string) {
-    const url = `https://${this.API_HOST}/`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-amz-json-1.1',
-        'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
-      },
-      body: JSON.stringify({
-        AuthParameters: {
-          USERNAME: username,
-          PASSWORD: passwordHash,
-        },
-      }),
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Auth failed with status ' + response.status);
-    }
-    return response.json();
-  }
-
-  static async getDevices(accessToken: string) {
-    const url = `https://${this.API_HOST}/devices`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/x-amz-json-1.1',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-    return response.json();
-  }
-}
-
-// Routes
-const aladdinAuthRoute = createRoute({
-  method: 'post',
-  path: '/api/aladdin/auth',
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            username: z.string().min(1),
-            passwordHash: z.string().min(1),
-          }),
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            success: z.boolean(),
-            data: z.any(),
-          }),
-        },
-      },
-      description: 'Aladdin Connect Authentication Result',
-    },
-  },
-});
-
-app.openapi(aladdinAuthRoute, async (c) => {
-  const { username, passwordHash } = c.req.valid('json');
-
-  try {
-    const data = await AladdinConnectClient.initiateAuth(username, passwordHash);
-    return c.json({ success: true, data }, 200);
-  } catch (error) {
-    return c.json({ success: false, data: String(error) }, 200);
-  }
-});
-
-const aladdinDevicesRoute = createRoute({
-  method: 'get',
-  path: '/api/aladdin/devices',
-  request: {
-    headers: z.object({
-      'aladdin-access-token': z.string().min(1),
-    }),
-  },
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            success: z.boolean(),
-            data: z.any(),
-          }),
-        },
-      },
-      description: 'Aladdin Connect Devices List',
-    },
-  },
-});
-
-app.openapi(aladdinDevicesRoute, async (c) => {
-  const { 'aladdin-access-token': accessToken } = c.req.valid('header');
-
-  try {
-    const data = await AladdinConnectClient.getDevices(accessToken);
-    return c.json({ success: true, data }, 200);
-  } catch (error) {
-    return c.json({ success: false, data: String(error) }, 200);
-  }
-});
-
-const mcpRoute = createRoute({
-  method: 'get',
-  path: '/mcp',
-  responses: {
-    200: {
-      content: {
-        'application/json': {
-          schema: z.object({
-            status: z.string(),
-          }),
-        },
-      },
-      description: 'MCP Status',
-    },
-  },
-});
-
-app.openapi(mcpRoute, (c) => {
-  return c.json({ status: 'ok' }, 200);
+  return c.json({
+    status: 'ok',
+    edge_network: 'Cloudflare',
+    d1_connected: true
+  });
 });
 
 export default app;

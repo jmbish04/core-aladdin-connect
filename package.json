@@ -1,75 +1,28 @@
 {
-  "displayName": "Aladdin Connect",
-  "name": "@homebridge-plugins/homebridge-aladdin-connect",
-  "version": "4.3.2",
-  "description": "Aladdin Connect plugin for Homebridge.",
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/homebridge-plugins/homebridge-aladdin-connect.git"
-  },
-  "bugs": {
-    "url": "https://github.com/homebridge-plugins/homebridge-aladdin-connect/issues"
-  },
-  "engines": {
-    "node": "^20 || ^22 || ^24",
-    "homebridge": "^1.11.0 || ^2.0.0-beta.27"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "main": "dist/index.js",
+  "name": "colby-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "check": "npm install && npm outdated",
-    "eslint": "eslint src/**.ts --max-warnings=0",
-    "eslint-fix": "eslint src/**.ts --max-warnings=0 --fix",
-    "prettier": "prettier --check src *.{yaml,json,md}",
-    "prettier-fix": "prettier --write src *.{yaml,json,md}",
-    "lint": "npm run eslint",
-    "lint-fix": "npm run eslint-fix && npm run prettier-fix",
-    "fmt": "npm run lint-fix",
-    "watch": "npm run build && npm link && nodemon",
-    "build": "rm -rf ./dist && tsc",
-    "test": "npm install",
-    "prepublishOnly": "npm run lint && npm run build"
+    "dev": "wrangler dev",
+    "build": "tsc",
+    "cf-typegen": "wrangler types",
+    "db:generate": "drizzle-kit generate",
+    "migrate:remote": "node ./scripts/migrate-remote.mjs",
+    "deploy": "npm run build && npm run db:generate && npm run migrate:remote && npx wrangler deploy"
   },
-  "keywords": [
-    "homebridge-plugin",
-    "genie",
-    "aladdin",
-    "connect"
-  ],
   "dependencies": {
     "@hono/swagger-ui": "^0.6.1",
-    "@hono/zod-openapi": "^1.4.0",
-    "@scalar/client-side-rendering": "^0.1.13",
-    "@scalar/hono-api-reference": "^0.10.20",
-    "async-lock": "^1.4.1",
-    "axios": "^1.12.2",
-    "axios-retry": "^4.5.0",
-    "cache-manager": "^6.4.3",
-    "cacheable": "^1.10.4",
-    "form-data": "^4.0.1",
-    "hono": "^4.12.23",
-    "keyv": "^5.5.2",
-    "pubsub-js": "^1.9.5",
-    "qs": "^6.14.0",
-    "zod": "^4.4.3"
+    "@hono/zod-openapi": "^0.18.3",
+    "@scalar/hono-api-reference": "^0.5.16",
+    "drizzle-orm": "^0.33.0",
+    "hono": "^4.6.1",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260603.1",
-    "@types/async-lock": "^1.4.2",
-    "@types/cache-manager": "^4.0.6",
-    "@types/node": "^24.12.4",
-    "@types/pubsub-js": "^1.8.6",
-    "@typescript-eslint/eslint-plugin": "<8",
-    "@typescript-eslint/parser": "<8",
-    "eslint": "<9",
-    "homebridge": "^1.11.0",
-    "homebridge-config-ui-x": "^5.6.1",
-    "nodemon": "^3.1.10",
-    "prettier": "^3.6.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "drizzle-kit": "^0.24.2",
+    "typescript": "^5.7.3",
+    "wrangler": "^3.105.1"
   }
 }
