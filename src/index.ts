@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
+import type { Context, Next } from 'hono';
 import { z } from 'zod';
 import { swaggerUI } from '@hono/swagger-ui';
 import { apiReference } from '@scalar/hono-api-reference';
