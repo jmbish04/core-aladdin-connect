@@ -30,7 +30,7 @@ app.use('*', async (c, next) => {
 });
 
 // 2. Strict Security Authentication Middleware
-const authMiddleware = async (c: any, next: any) => {
+const authMiddleware = async (c: Context<{ Bindings: Env }>, next: Next) => {
   const authHeader = c.req.header('Authorization');
   const targetSecret = await c.env.WORKER_API_KEY.get();
 
